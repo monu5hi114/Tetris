@@ -1,12 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
 
 public class ShapeController : MonoBehaviour
 {
+    [SerializeField]public InputSwap inputSwap;
+    private int Score = 0;
     [SerializeField] private Transform Board;
+    [SerializeField] private TextMeshProUGUI ScoreText;
     [SerializeField] private GameObject Node;
+    [SerializeField] private GameObject nextshape;
     private int[,] shapeArr;
+    private int shapeIndex;
+    private int nextShapeIndex;
     private List<int[,]> Shapes = new List<int[,]>();
     private int[,] shape1 =
        { 
@@ -48,15 +57,53 @@ public class ShapeController : MonoBehaviour
     private int PosY;
     private int LastPosX;
     private int LastPosY;
-    private int MaxDepth = 14;
-    private int MaxLength = 10;
+    private int MaxDepth = 20;
+    private int MaxLength = 9;
     public float Timeframe = .5f;
+    [SerializeField] private  Image[] SpriteShapeArray;
+    [SerializeField] private  Sprite[] SpriteArray;
 
 
     private bool clickProcessed_Left = false;
     private bool clickProcessed_Right = false;
     private bool clickProcessed_Up = false;
     private bool clickProcessed_Down = false;
+    private void Awake()
+    {
+        ScoreText.text = Score.ToString();
+
+        BoxScript.SpriteArray = SpriteArray;
+        inputSwap.OnSwipeUp += InputSwap_OnSwipeUp;
+        inputSwap.OnSwipeDown += InputSwap_OnSwipeDown;
+        inputSwap.OnSwipeLeft += InputSwap_OnSwipeLeft;
+        inputSwap.OnSwipeRight += InputSwap_OnSwipeRight;
+    }
+
+    private void InputSwap_OnSwipeRight(object sender, System.EventArgs e)
+    {
+        HandleRightArrowClick();
+    }
+
+    private void InputSwap_OnSwipeLeft(object sender, System.EventArgs e)
+    {
+        HandleLeftArrowClick();
+    }
+
+    private void InputSwap_OnSwipeDown(object sender, System.EventArgs e)
+    {
+        HandleDownArrowClick();
+    }
+
+    private void InputSwap_OnSwipeUp(object sender, System.EventArgs e)
+    {
+        HandleUpArrowClick();
+    }
+
+    
+
+    
+
+
     private void Start()
     {
         Shapes.Add(shape1);
@@ -67,8 +114,16 @@ public class ShapeController : MonoBehaviour
         Shapes.Add(shape6);
         Shapes.Add(shape7);
         PosX = ShapePosX; PosY = ShapePosY;
-        shapeArr = Shapes[Random.Range(0, 7)];
+        shapeIndex = UnityEngine.Random.Range(0, 7);
+        nextShapeIndex = UnityEngine.Random.Range(0, 7);
+        nextShapeShow();
+        shapeArr = Shapes[shapeIndex];
         DrawShape();
+    }
+    public void nextShapeShow()
+    {
+        Destroy(nextshape.transform.GetChild(0).gameObject);
+        Instantiate(SpriteShapeArray[nextShapeIndex], nextshape.transform.position, Quaternion.identity, nextshape.transform);
     }
     private void Update()
     {
@@ -88,8 +143,11 @@ public class ShapeController : MonoBehaviour
                 DrawShapePermanent();
                 ScoreLines();
                 PosY = ShapePosY;
-                PosX = ShapePosX;
-                shapeArr = Shapes[Random.Range(0, 7)];
+                PosX = ShapePosX; 
+                shapeIndex = nextShapeIndex;
+                nextShapeIndex = UnityEngine.Random.Range(0, 7);
+                nextShapeShow();
+                shapeArr = Shapes[shapeIndex];
 
                 DrawShape();
             }
@@ -106,7 +164,7 @@ public class ShapeController : MonoBehaviour
                 if (shapeArr[i - PosY, j - PosX] == 1)
                 {
                     Board.GetChild(i).GetChild(j).GetComponent<BoxScript>()._value=1;
-                    Board.GetChild(i).GetChild(j).GetComponent<BoxScript>().SetSprite();
+                    Board.GetChild(i).GetChild(j).GetComponent<BoxScript>().SetSprite(shapeIndex);
                 }
             }
         }
@@ -121,7 +179,7 @@ public class ShapeController : MonoBehaviour
             {
                 if (shapeArr[i-PosY,j-PosX]==1)
                 {
-                    Board.GetChild(i).GetChild(j).GetComponent<BoxScript>().ShowVisual(1);
+                    Board.GetChild(i).GetChild(j).GetComponent<BoxScript>().ShowVisual(1, shapeIndex);
                 }
             }
         }
@@ -134,7 +192,7 @@ public class ShapeController : MonoBehaviour
             {
                 if (shapeArr[i - LastPosY, j - LastPosX] == 1)
                 {
-                    Board.GetChild(i).GetChild(j).GetComponent<BoxScript>().ShowVisual(0);
+                    Board.GetChild(i).GetChild(j).GetComponent<BoxScript>().ShowVisual(0, shapeIndex);
                 }
             }
         }
@@ -148,7 +206,21 @@ public class ShapeController : MonoBehaviour
             {
                 if (Board.GetChild(i+1).GetChild(j).GetComponent<BoxScript>()._value==1 && shapeArr[i-PosY,j-PosX]==1)
                 {
-                    int a = Board.GetChild(i+1).GetChild(j).GetComponent<BoxScript>()._value;
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+    public bool CanRotate()
+    {
+        if (PosY >= MaxDepth - shapeArr.GetLength(1) || PosX >= MaxLength - shapeArr.GetLength(0)) return false;
+        for (int i = PosY; i < PosY + shapeArr.GetLength(0); i++)
+        {
+            for (int j = PosX; j < PosX + shapeArr.GetLength(1); j++)
+            {
+                if (Board.GetChild(i).GetChild(j).GetComponent<BoxScript>()._value == 1 && shapeArr[j - PosX, i - PosY] == 1)
+                {
                     return false;
                 }
             }
@@ -244,8 +316,12 @@ public class ShapeController : MonoBehaviour
 
     private void HandleUpArrowClick()
     {
-        EraseShape();
-        RotateArray(ref shapeArr);
+        if (CanRotate())
+        {
+            EraseShape();
+            RotateArray(ref shapeArr);
+        }
+        
     }
 
 
@@ -271,7 +347,8 @@ private void HandleDownArrowClick()
                 rotatedArray[j, width - i - 1] = array[i, j];
             }
         }
-        array = rotatedArray;
+        
+            array = rotatedArray;
     }
     private void ScoreLines()
     {
@@ -303,6 +380,7 @@ private void HandleDownArrowClick()
         {
             int lineIndex = linesToDestroy[i];
             Destroy(Board.GetChild(lineIndex).gameObject);
+            Score += 10;
         }
 
         // Instantiate new objects as the first child for each destroyed line
@@ -310,6 +388,7 @@ private void HandleDownArrowClick()
         {
             InstantiateAsFirstChild();
         }
+        ScoreText.text = Score.ToString();
     }
 
     void InstantiateAsFirstChild()

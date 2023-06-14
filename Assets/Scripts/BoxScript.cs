@@ -1,24 +1,40 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using TMPro;
 using UnityEngine;
 
 public class BoxScript : MonoBehaviour
 {
-    public Color _sprite;
+    private Sprite original;
+    [SerializeField] private Sprite filled;
+    public TextMeshProUGUI newtext;
     public int _value { get; set; }
     private void Awake()
     {
-        _sprite = GetComponent<Image>().color;
+        original = GetComponent<Image>().sprite;
+        newtext.text = _value.ToString();
         _value = 0;
     }
 
     public void SetSprite()
     {
-        GetComponent<Image>().color = Color.red;
+        newtext.text = _value.ToString();
+        if (_value == 1)
+        {
+            GetComponent<Image>().sprite = filled;
+        }
+        else 
+        {
+            GetComponent<Image>().sprite = original;
+        }
+        
     }
-    public void SetSpriteNormal()
+    public void ShowVisual(int i)
     {
-        GetComponent<Image>().color = _sprite;
+        if(i==1)
+            GetComponent<Image>().sprite = filled;
+        else
+            GetComponent<Image>().sprite = original;
     }
 }

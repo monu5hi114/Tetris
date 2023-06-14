@@ -6,35 +6,37 @@ using UnityEngine;
 
 public class BoxScript : MonoBehaviour
 {
-    private Sprite original;
-    [SerializeField] private Sprite filled;
-    public TextMeshProUGUI newtext;
+    public static Sprite[] SpriteArray;
     public int _value { get; set; }
     private void Awake()
     {
-        original = GetComponent<Image>().sprite;
-        newtext.text = _value.ToString();
         _value = 0;
     }
 
-    public void SetSprite()
+    public void SetSprite(int SpriteIndex)
     {
-        newtext.text = _value.ToString();
         if (_value == 1)
         {
-            GetComponent<Image>().sprite = filled;
+            GetComponent<Image>().enabled = true;
+            GetComponent<Image>().sprite = SpriteArray[SpriteIndex];
         }
         else 
         {
-            GetComponent<Image>().sprite = original;
+            GetComponent<Image>().enabled = false;
+
         }
-        
+
     }
-    public void ShowVisual(int i)
+    public void ShowVisual(int i,int SpriteIndex)
     {
-        if(i==1)
-            GetComponent<Image>().sprite = filled;
+        if (i == 1)
+        {
+            GetComponent<Image>().enabled = true;
+            GetComponent<Image>().sprite = SpriteArray[SpriteIndex];
+        }
         else
-            GetComponent<Image>().sprite = original;
+        {
+            GetComponent<Image>().enabled = false;
+        }
     }
 }
